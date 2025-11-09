@@ -1,0 +1,28 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - wbfy
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - id: bunver
+        run: |
+          bun_ver=$(awk '/^bun[[:space:]]+/{print $2; exit}' .tool-versions || true)
+          echo "bun_version=$bun_ver" >> $GITHUB_OUTPUT
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ steps.bunver.outputs.bun_version }}
+      - run: bun install
+      - run: bun run build
+      - run: bun lint
+      - run: bun test
